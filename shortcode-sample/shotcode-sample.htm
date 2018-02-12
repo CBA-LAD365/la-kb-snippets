@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Short Code Demo</title>
+    <script type="text/javascript">
+        //<YOUR LAforD365 SHORTCODE TAG HERE >//
+    </script>
+
+</head>
+<body>
+
+<button onClick="shortcode();">Short Code</button>
+
+
+<script type="text/javascript">
+        function shortcode() {
+           window.LAShortCodeService.requestShortCode(
+           function(sc) { alert("cobrowse shortcode is: " + sc);} ,
+           function() { console.log("Incoming Short-code cobrowse Started");},
+           function(err) { console.log("error: " + err);}
+        )};
+
+
+</script>
+</body>
+</html>
