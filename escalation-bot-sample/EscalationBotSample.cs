@@ -6,7 +6,7 @@ using Microsoft.Bot.Connector;
 using Microsoft.Bot.Builder.ConnectorEx;
 using System.Timers;
 using Newtonsoft.Json;
-using Cafex.LiveAssist.Chat;
+using Cafex.LiveAssist.Bot;
 
 
 namespace Bot_Application2.Dialogs
