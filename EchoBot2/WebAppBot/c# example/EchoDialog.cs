@@ -32,8 +32,13 @@ namespace Microsoft.Bot.Sample.SimpleEchoBot
         public async Task MessageReceivedAsync(IDialogContext context, IAwaitable<IMessageActivity> argument)
         {
             var activity = await argument as Activity;
-
-            if (activity.Text == "reset")
+            
+            if (chatContext != null) 
+            {
+              // As chatContext is not null we already have an escalated chat.
+              // Post the incoming message line to the escalated chat
+              await sdk.PostLine(activity.Text, chatContext);
+            }else if (activity.Text == "reset")
             {
                 PromptDialog.Confirm(
                     context,
