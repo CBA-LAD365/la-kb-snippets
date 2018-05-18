@@ -135,7 +135,7 @@ namespace Microsoft.Bot.Sample.SimpleEchoBot
                     },
                     lastName = new AssertedString()
                     {
-                        value = "James",
+                        value = "James"
                     }
                 }
             };
