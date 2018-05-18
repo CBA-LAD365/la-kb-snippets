@@ -136,11 +136,6 @@ namespace Microsoft.Bot.Sample.SimpleEchoBot
                     lastName = new AssertedString()
                     {
                         value = "James",
-                        isAsserted = true
-                    },
-                    companySize = new AssertedInteger()
-                    {
-                        value = 10
                     }
                 }
             };
