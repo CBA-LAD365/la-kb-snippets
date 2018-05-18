@@ -115,12 +115,7 @@ using Cafex.LiveAssist.Bot;
                     },
                     lastName = new AssertedString()
                     {
-                        value = "James",
-                        isAsserted = true
-                    },
-                    companySize = new AssertedInteger()
-                    {
-                        value = 10
+                        value = "James"
                     }
                 }
             };
