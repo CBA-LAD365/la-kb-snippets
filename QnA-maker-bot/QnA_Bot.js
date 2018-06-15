@@ -31,9 +31,15 @@ var tableStorage = new botbuilder_azure.AzureBotStorage({ gzipData: false }, azu
 // Create your bot with a function to receive messages from the user
 var bot = new builder.UniversalBot(connector);
 bot.set('storage', tableStorage);
+
 var recognizer = new builder_cognitiveservices.QnAMakerRecognizer({
-                knowledgeBaseId: process.env.QnAKnowledgebaseId, 
-    subscriptionKey: process.env.QnASubscriptionKey});
+
+    knowledgeBaseId: process.env.QnAKnowledgebaseId,
+
+    authKey: process.env.QnAAuthKey || process.env.QnASubscriptionKey, // Backward compatibility with QnAMaker (Preview)
+
+    endpointHostName: process.env.QnAEndpointHostName});
+
 var basicQnAMakerDialog = new builder_cognitiveservices.QnAMakerDialog({
     recognizers: [recognizer],
                 defaultMessage: 'No match! Try changing the query terms!',
