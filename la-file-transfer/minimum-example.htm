@@ -16,7 +16,7 @@
         <!-- 3. Override openURL function -->
         filetransfer.openUrl = function(eventData) {
         
-            <!-- 4. In this example create an Alert with the file's URL-->
+            <!-- 4. In this example create an Alert with the file URL-->
             let data = JSON.parse(eventData.detail.data);
             alert(data.fileUrl);
         }
