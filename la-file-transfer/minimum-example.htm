@@ -1,0 +1,28 @@
+<html>
+<head>
+
+<!---  Live Assist Tag from Portal -->
+<script type="text/javascript">
+(function(a){function b(B,C)
+....
+</script>
+
+<!-- 1. Override the default filetransfer behaviour -->
+<script>
+        
+        <!-- 2. Create a new filetransfer reference -->
+        filetransfer = {};
+        
+        <!-- 3. Override openURL function -->
+        filetransfer.openUrl = function(eventData) {
+        
+            <!-- 4. In this example create an Alert with the file's URL-->
+            let data = JSON.parse(eventData.detail.data);
+            alert(data.fileUrl);
+        }
+        
+</script>
+</head>
+<body>
+</body>
+</html>
