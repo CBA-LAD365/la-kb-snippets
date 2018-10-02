@@ -2,9 +2,11 @@
 //Please find the full article on the Live Assist Knowledge Base
 
 //Add this to you: AndroidManifest.xml
-<application android:name="com.cafex.liveassist.LiveAssistApplication" Modifying an existing Application.
-
-
+<application android:name="com.cafex.liveassist.LiveAssistApplication" 
+   ...   
+ 
+   
+//Modifying an existing Application.
 // 1. Import the following classes from the Live Assist library
 
 import com.alicecallsbob.assist.sdk.core.AssistApplication;
