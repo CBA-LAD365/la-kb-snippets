@@ -12,16 +12,6 @@ using Newtonsoft.Json;
 
 namespace Microsoft.BotBuilderSamples
 {
-    // Live Assist custom channel data.
-    public class LiveAssistChannelData
-    {
-        [JsonProperty("type", NullValueHandling = NullValueHandling.Ignore)]
-        public string Type { get; set; }
-
-        [JsonProperty("skill", NullValueHandling = NullValueHandling.Ignore)]
-        public string Skill { get; set; }
-    }
-    
     public class QnABot : ActivityHandler
     {
         private readonly IConfiguration _configuration;
@@ -33,51 +23,6 @@ namespace Microsoft.BotBuilderSamples
             _configuration = configuration;
             _logger = logger;
             _httpClientFactory = httpClientFactory;
-        }
-
-        protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
-        {
-            string TRANSFER_MESSAGE = "transfer to ";
-            if (turnContext.Activity.Text.StartsWith(TRANSFER_MESSAGE))
-            {
-                // visitor typed transfer to [skill]
-                var transferTo = turnContext.Activity.Text.Substring(TRANSFER_MESSAGE.Length);
-                _logger.LogInformation("OnMessageActivityAsync:This is transferMessage, transferring to agent with skill - " + transferTo);
-                var reply = MessageFactory.Text("Transferring to agent with skill: " + transferTo);
-                reply.ChannelData = new LiveAssistChannelData()
-                {
-                    Type = "transfer",
-                    Skill = transferTo
-                };
-                await turnContext.SendActivityAsync(reply);
-            }
-            else
-            {
-                _logger.LogInformation("OnMessageActivityAsync: Pass to QnAMaker");
-                var httpClient = _httpClientFactory.CreateClient();
-    
-                var qnaMaker = new QnAMaker(new QnAMakerEndpoint
-                {
-                    KnowledgeBaseId = _configuration["QnAKnowledgebaseId"],
-                    EndpointKey = _configuration["QnAAuthKey"],
-                    Host = GetHostname()
-                },
-                null,
-                httpClient);
-    
-                // The actual call to the QnA Maker service.
-                var response = await qnaMaker.GetAnswersAsync(turnContext);
-                if (response != null && response.Length > 0)
-                {
-                    await turnContext.SendActivityAsync(MessageFactory.Text(response[0].Answer), cancellationToken);
-                }
-                else
-                {
-                    _logger.LogInformation("OnMessageActivityAsync: No QnA answer, Transferring to agent ...");
-                    var reply = MessageFactory.Text("QnA bot couldn't answer your question. If you want to speak to a human type 'transfer to human'");                          
-                    await turnContext.SendActivityAsync(reply);
-                }                                
-            }                   
         }
 
         // Copied and modified this method from ActivityHandler.cs
@@ -140,6 +85,51 @@ namespace Microsoft.BotBuilderSamples
             //Deal with visitorMessages and non Live Assit activity types in QnA OnMessageActivityAsync by calling base OnTurnAsync
             await base.OnTurnAsync(turnContext, cancellationToken);
         }
+
+        protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
+        {
+            string TRANSFER_MESSAGE = "transfer to ";
+            if (turnContext.Activity.Text.StartsWith(TRANSFER_MESSAGE))
+            {
+                // visitor typed transfer to [skill]
+                var transferTo = turnContext.Activity.Text.Substring(TRANSFER_MESSAGE.Length);
+                _logger.LogInformation("OnMessageActivityAsync:This is transferMessage, transferring to agent with skill - " + transferTo);
+                var reply = MessageFactory.Text("Transferring to agent with skill: " + transferTo);
+                reply.ChannelData = new LiveAssistChannelData()
+                {
+                    Type = "transfer",
+                    Skill = transferTo
+                };
+                await turnContext.SendActivityAsync(reply);
+            }
+            else
+            {
+                _logger.LogInformation("OnMessageActivityAsync: Pass to QnAMaker");
+                var httpClient = _httpClientFactory.CreateClient();
+    
+                var qnaMaker = new QnAMaker(new QnAMakerEndpoint
+                {
+                    KnowledgeBaseId = _configuration["QnAKnowledgebaseId"],
+                    EndpointKey = _configuration["QnAAuthKey"],
+                    Host = GetHostname()
+                },
+                null,
+                httpClient);
+    
+                // The actual call to the QnA Maker service.
+                var response = await qnaMaker.GetAnswersAsync(turnContext);
+                if (response != null && response.Length > 0)
+                {
+                    await turnContext.SendActivityAsync(MessageFactory.Text(response[0].Answer), cancellationToken);
+                }
+                else
+                {
+                    _logger.LogInformation("OnMessageActivityAsync: No QnA answer, Transferring to agent ...");
+                    var reply = MessageFactory.Text("QnA bot couldn't answer your question. If you want to speak to a human type 'transfer to human'");                          
+                    await turnContext.SendActivityAsync(reply);
+                }                                
+            }                   
+        }
         
         private string GetHostname()
         {
@@ -156,5 +146,15 @@ namespace Microsoft.BotBuilderSamples
 
             return hostname;
         }
+    }
+    
+    // Live Assist custom channel data.
+    public class LiveAssistChannelData
+    {
+        [JsonProperty("type", NullValueHandling = NullValueHandling.Ignore)]
+        public string Type { get; set; }
+
+        [JsonProperty("skill", NullValueHandling = NullValueHandling.Ignore)]
+        public string Skill { get; set; }
     }
 }
