@@ -1,0 +1,160 @@
+using System;
+using System.Net;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Bot.Builder;
+using Microsoft.Bot.Builder.AI.QnA;
+using Microsoft.Bot.Schema;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+
+namespace Microsoft.BotBuilderSamples
+{
+    // Live Assist custom channel data.
+    public class LiveAssistChannelData
+    {
+        [JsonProperty("type", NullValueHandling = NullValueHandling.Ignore)]
+        public string Type { get; set; }
+
+        [JsonProperty("skill", NullValueHandling = NullValueHandling.Ignore)]
+        public string Skill { get; set; }
+    }
+    
+    public class QnABot : ActivityHandler
+    {
+        private readonly IConfiguration _configuration;
+        private readonly ILogger<QnABot> _logger;
+        private readonly IHttpClientFactory _httpClientFactory;
+
+        public QnABot(IConfiguration configuration, ILogger<QnABot> logger, IHttpClientFactory httpClientFactory)
+        {
+            _configuration = configuration;
+            _logger = logger;
+            _httpClientFactory = httpClientFactory;
+        }
+
+        protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
+        {
+            string TRANSFER_MESSAGE = "transfer to ";
+            if (turnContext.Activity.Text.StartsWith(TRANSFER_MESSAGE))
+            {
+                // visitor typed transfer to [skill]
+                var transferTo = turnContext.Activity.Text.Substring(TRANSFER_MESSAGE.Length);
+                _logger.LogInformation("OnMessageActivityAsync:This is transferMessage, transferring to agent with skill - " + transferTo);
+                var reply = MessageFactory.Text("Transferring to agent with skill: " + transferTo);
+                reply.ChannelData = new LiveAssistChannelData()
+                {
+                    Type = "transfer",
+                    Skill = transferTo
+                };
+                await turnContext.SendActivityAsync(reply);
+            }
+            else
+            {
+                _logger.LogInformation("OnMessageActivityAsync: Pass to QnAMaker");
+                var httpClient = _httpClientFactory.CreateClient();
+    
+                var qnaMaker = new QnAMaker(new QnAMakerEndpoint
+                {
+                    KnowledgeBaseId = _configuration["QnAKnowledgebaseId"],
+                    EndpointKey = _configuration["QnAAuthKey"],
+                    Host = GetHostname()
+                },
+                null,
+                httpClient);
+    
+                // The actual call to the QnA Maker service.
+                var response = await qnaMaker.GetAnswersAsync(turnContext);
+                if (response != null && response.Length > 0)
+                {
+                    await turnContext.SendActivityAsync(MessageFactory.Text(response[0].Answer), cancellationToken);
+                }
+                else
+                {
+                    _logger.LogInformation("OnMessageActivityAsync: No QnA answer, Transferring to agent ...");
+                    var reply = MessageFactory.Text("QnA bot couldn't answer your question. If you want to speak to a human type 'transfer to human'");                          
+                    await turnContext.SendActivityAsync(reply);
+                }                                
+            }                   
+        }
+
+        // Copied and modified this method from ActivityHandler.cs
+        // https://github.com/microsoft/botbuilder-dotnet/blob/master/libraries/Microsoft.Bot.Builder/ActivityHandler.cs
+        // Need to do Live Assist integration before calling - 
+        // await base.OnTurnAsync(turnContext, cancellationToken);
+        public override async Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            if (turnContext == null)
+            {
+                throw new ArgumentNullException(nameof(turnContext));
+            }
+
+            if (turnContext.Activity == null)
+            {
+                throw new ArgumentException($"{nameof(turnContext)} must have non-null Activity.");
+            }
+
+            if (turnContext.Activity.Type == null)
+            {
+                throw new ArgumentException($"{nameof(turnContext)}.Activity must have non-null Type.");
+            }
+            
+            //handle Live Assist specific direct line messages here
+            if (turnContext.Activity.Type == ActivityTypes.Message)
+            {
+                if (turnContext.Activity.ChannelId == "directline")
+                {
+                    var laChannelData = turnContext.Activity.GetChannelData<LiveAssistChannelData>();
+                    switch (laChannelData.Type)
+                    {
+                        case "visitorContextData":
+                            //process context data if required. This is the first message received so say hello.
+                            _logger.LogInformation("OnTurnAsync: visitorContextData ");
+                            var visitorContextDataReply = turnContext.Activity.CreateReply();                       
+                            visitorContextDataReply.Text = "Hi, I am a QnA bot and will try to answer your questions. If you want to speak to a human type 'transfer to human'";
+                            await turnContext.SendActivityAsync(visitorContextDataReply);
+                            return;
+                        case "visitorMessage":
+                            _logger.LogInformation("OnTurnAsync: visitorMessage - deal with messages in QnA OnMessageActivityAsync method");                           
+                            break;
+                        case "transferFailed":
+                            _logger.LogWarning("OnTurnAsync: transferFailed ");
+                            var transferFailedReply = turnContext.Activity.CreateReply();                       
+                            transferFailedReply.Text = "Agent is either busy or unavailable. TODO - Bot developer to decide action";
+                            await turnContext.SendActivityAsync(transferFailedReply);
+                            return;
+                        case "systemMessage":
+                            //react to system messages if required
+                            return;
+                        case "otherAgentMessage":
+                            //react to messages from a Live Assist supervisor if required
+                            return;
+                       default:
+                            _logger.LogWarning("OnTurnAsync: This is not a a recognised Live Assist directline message " + laChannelData.Type);
+                            break;
+                   }
+               }
+            }
+            //Deal with visitorMessages and non Live Assit activity types in QnA OnMessageActivityAsync by calling base OnTurnAsync
+            await base.OnTurnAsync(turnContext, cancellationToken);
+        }
+        
+        private string GetHostname()
+        {
+            var hostname = _configuration["QnAEndpointHostName"];
+            if (!hostname.StartsWith("https://"))
+            {
+                hostname = string.Concat("https://", hostname);
+            }
+
+            if (!hostname.EndsWith("/qnamaker"))
+            {
+                hostname = string.Concat(hostname, "/qnamaker");
+            }
+
+            return hostname;
+        }
+    }
+}
