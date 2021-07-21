@@ -1,0 +1,11 @@
+{
+  "frameworks": {
+    "net46":{
+      "dependencies": {
+        "Microsoft.Bot.Builder.Azure": "3.2.5",
+        "LiveAssistBotSDK": "1.0.1",
+        "jose-jwt": "2.4.0"
+      }
+    }
+   }
+}
