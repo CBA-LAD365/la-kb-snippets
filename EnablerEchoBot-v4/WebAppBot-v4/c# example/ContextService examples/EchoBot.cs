@@ -231,6 +231,7 @@ namespace EchoBot.Bots
                     }
                 }
             };
+            // For quick dev test call Jwt.CreateFromFileKey instead
             return Jwt.Create(contextId, contextData);
         }
 
