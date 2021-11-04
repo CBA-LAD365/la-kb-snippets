@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Jose;
 using System.Security.Cryptography.X509Certificates;
+using EscalationBot.Context;
 
 
 /// <summary>
